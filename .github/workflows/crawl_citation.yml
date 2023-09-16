@@ -1,0 +1,27 @@
+name: crawl-google-scholar
+
+on: 
+  push:
+  schedule:
+  - cron:  '0 12 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: citation
+    - name: Run
+      run: |
+        pip3 install -r requirements.txt --quiet
+        python3 crawl_citation.py
+        git config --local user.name "${GITHUB_ACTOR}"
+        git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        export remote_repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+        git add *.json
+        git commit -m "Update citations" --amend --reset-author
+        git push -f "${remote_repo}" citation
+        curl https://purge.jsdelivr.net/gh/jiemingzhu/jiemingzhu.github.io@citation/citation.json
+      env: 
+        GOOGLE_SCHOLAR_ID: "oNKerP8AAAAJ"
