@@ -15,8 +15,8 @@ jobs:
         ref: citation
     - name: Run crawler
       run: |
-        pip3 install -r requirements.txt --quiet
-        python3 crawl_citation.py
+        pip3 install -r requirements.txt
+        python3 -u crawl_citation.py
         git config --local user.name "${GITHUB_ACTOR}"
         git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
         export remote_repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
