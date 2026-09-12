@@ -1,6 +1,6 @@
 name: crawl-google-scholar
 
-on: 
+on:
   push:
   schedule:
   - cron:  '0 12 * * *'
@@ -13,16 +13,27 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: citation
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
     - name: Run crawler
       run: |
-        pip3 install -r requirements.txt
-        python3 -u crawl_citation.py
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        python -u crawl_citation.py
+      env:
+        GOOGLE_SCHOLAR_ID: "oNKerP8AAAAJ"
+        SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+    - name: Commit and push
+      run: |
         git config --local user.name "${GITHUB_ACTOR}"
         git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-        export remote_repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
-        git add *.json
-        git commit -m "Update citations" --amend --reset-author
-        git push -f "${remote_repo}" citation
-        curl https://purge.jsdelivr.net/gh/jiemingzhu/jiemingzhu.github.io@citation/citation.json
-      env: 
-        GOOGLE_SCHOLAR_ID: "oNKerP8AAAAJ"
+        git add -A
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+        else
+          git commit --amend --reset-author -m "Update citations [skip ci]"
+          git push -f "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" citation
+        fi
+        # Best-effort CDN purge; never fail the job on this.
+        curl -s "https://purge.jsdelivr.net/gh/jiemingzhu/jiemingzhu.github.io@citation/citation.json" || true
